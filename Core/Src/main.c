@@ -134,10 +134,10 @@ int main(void)
 //	      HAL_Delay(500); // Delay for 500 milliseconds
 
 
-	  MX_LWIP_Process();
+	  //MX_LWIP_Process();
 	  if (dhcp_supplied_address(&gnetif)) {
-		  	  	  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-	              printf("DHCP IP Address Assigned: %s\n", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
+		  	  	  //HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
+	              //printf("DHCP IP Address Assigned: %s\n", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
 	          }
 
 
