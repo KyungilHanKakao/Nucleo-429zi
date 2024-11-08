@@ -62,6 +62,18 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for myTask02 */
+osThreadId_t myTask02Handle;
+uint32_t myTask02Buffer[ 256 ];
+osStaticThreadDef_t myTask02ControlBlock;
+const osThreadAttr_t myTask02_attributes = {
+  .name = "myTask02",
+  .cb_mem = &myTask02ControlBlock,
+  .cb_size = sizeof(myTask02ControlBlock),
+  .stack_mem = &myTask02Buffer[0],
+  .stack_size = sizeof(myTask02Buffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for myTimer01 */
 osTimerId_t myTimer01Handle;
 osStaticTimerDef_t myTimer01ControlBlock;
@@ -77,6 +89,7 @@ const osTimerAttr_t myTimer01_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+void StartTask02(void *argument);
 void Callback01(void *argument);
 
 extern void MX_LWIP_Init(void);
@@ -121,6 +134,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of myTask02 */
+  myTask02Handle = osThreadNew(StartTask02, NULL, &myTask02_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -149,9 +165,30 @@ void StartDefaultTask(void *argument)
 	//ethernetif_input(&gnetif);
 	//sys_check_timeouts();
 	  HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
+
 	  osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartTask02 */
+/**
+* @brief Function implementing the myTask02 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTask02 */
+void StartTask02(void *argument)
+{
+  /* USER CODE BEGIN StartTask02 */
+  /* Infinite loop */
+  for(;;)
+  {
+	  HAL_GPIO_TogglePin(GPIOB, LD1_Pin);
+	  osDelay(500);
+
+  }
+  /* USER CODE END StartTask02 */
 }
 
 /* Callback01 function */

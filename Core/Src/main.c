@@ -135,11 +135,13 @@ int main(void)
 
 
 	  //MX_LWIP_Process();
-	  if (dhcp_supplied_address(&gnetif)) {
+	  //if (dhcp_supplied_address(&gnetif)) {
 		  	  	  //HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
 	              //printf("DHCP IP Address Assigned: %s\n", ip4addr_ntoa(netif_ip4_addr(&gnetif)));
-	          }
+	  //        }
 
+	  //HAL_GPIO_TogglePin(GPIOB, LD1_Pin);
+	  //osDelay(500);
 
 
     /* USER CODE END WHILE */
