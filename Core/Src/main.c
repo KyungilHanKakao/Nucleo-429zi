@@ -28,6 +28,7 @@
 #include "ethernetif.h"
 #include "netif.h"
 #include "lwip/icmp.h"
+#include <stdio.h>
 
 
 /* USER CODE END Includes */
@@ -39,6 +40,17 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+
+PUTCHAR_PROTOTYPE
+{
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
 
 /* USER CODE END PD */
 
@@ -97,7 +109,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  printf("hello world\n\r");
   // Set this network interface as default
    //netif_set_default(&gnetif);
 
