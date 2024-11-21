@@ -26,19 +26,26 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lwip.h"
+#include "usart.h"
+#include <stdio.h>
+#include "lwip/api.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
+#include "lwip/inet.h"
+#include "string.h"
 extern struct netif gnetif;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-typedef StaticTask_t osStaticThreadDef_t;
-typedef StaticTimer_t osStaticTimerDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SERVER_IP   "192.168.0.27"  // Replace with your server's IP address
+#define SERVER_PORT 6000             // Replace with your server's port
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,39 +59,27 @@ typedef StaticTimer_t osStaticTimerDef_t;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-uint32_t defaultTaskBuffer[ 256 ];
-osStaticThreadDef_t defaultTaskControlBlock;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .cb_mem = &defaultTaskControlBlock,
-  .cb_size = sizeof(defaultTaskControlBlock),
-  .stack_mem = &defaultTaskBuffer[0],
-  .stack_size = sizeof(defaultTaskBuffer),
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for myTask02 */
 osThreadId_t myTask02Handle;
-uint32_t myTask02Buffer[ 256 ];
-osStaticThreadDef_t myTask02ControlBlock;
 const osThreadAttr_t myTask02_attributes = {
   .name = "myTask02",
-  .cb_mem = &myTask02ControlBlock,
-  .cb_size = sizeof(myTask02ControlBlock),
-  .stack_mem = &myTask02Buffer[0],
-  .stack_size = sizeof(myTask02Buffer),
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for myTimer01 */
 osTimerId_t myTimer01Handle;
-osStaticTimerDef_t myTimer01ControlBlock;
 const osTimerAttr_t myTimer01_attributes = {
-  .name = "myTimer01",
-  .cb_mem = &myTimer01ControlBlock,
-  .cb_size = sizeof(myTimer01ControlBlock),
+  .name = "myTimer01"
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+void tcp_client_task(void* argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -121,7 +116,7 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   if (osTimerStart(myTimer01Handle, 1000) != osOK) {
           // Handle error in starting the timer
-          //printf("Failed to start timer\n");
+          printf("Failed to start timer\n");
           return;
       }
   /* USER CODE END RTOS_TIMERS */
@@ -159,13 +154,18 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  osDelay(5000);
+
+  printf("before\n");
+    //tcp_client_task((void*)argument);
+
   /* Infinite loop */
   for(;;)
   {
 	//ethernetif_input(&gnetif);
 	//sys_check_timeouts();
-	  HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
-
+	  HAL_GPIO_TogglePin(GPIOB, LD1_Pin);
+	  //printf("StartDefaultTask\n");
 	  osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
@@ -184,7 +184,7 @@ void StartTask02(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_TogglePin(GPIOB, LD1_Pin);
+	  HAL_GPIO_TogglePin(GPIOB, LD2_Pin);
 	  osDelay(500);
 
   }
@@ -195,12 +195,81 @@ void StartTask02(void *argument)
 void Callback01(void *argument)
 {
   /* USER CODE BEGIN Callback01 */
-	HAL_GPIO_TogglePin(GPIOB, LD2_Pin);
+	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
   /* USER CODE END Callback01 */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void tcp_client_task(void *arg) {
 
+
+	int sock;
+	    struct sockaddr_in server_addr;
+	    char message[] = "Hello from STM32";
+	    char buffer[1024];
+	    int bytes_received;
+
+	    // Create socket
+	    printf("sock = socket\n");
+	    sock = socket(AF_INET, SOCK_STREAM, 0);
+	    if (sock < 0) {
+	        printf("Failed to create socket\n");
+	        vTaskDelete(NULL);
+	        return;
+	    }
+	    printf("memset\n");
+	    // Set up the server address structure
+		memset(&server_addr, 0, sizeof(server_addr));
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_port = htons(SERVER_PORT);
+	    if (!inet_aton(SERVER_IP, &server_addr.sin_addr)) {
+	            printf("Invalid IP address\n");
+	            lwip_close(sock);
+	            return;
+	        }
+
+	    // Set up server address
+	    //server_addr.sin_family = AF_INET;
+	    //server_addr.sin_port = 6000;//htons(SERVER_PORT);
+	    //inet_aton(SERVER_IP, &server_addr.sin_addr);
+
+
+
+	    // Connect to server
+	    if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+	        printf("Failed to connect to server : %d\n", errno);
+	        close(sock);
+	        vTaskDelete(NULL);
+
+	        return;
+	    }
+
+	    printf("Connected to server\n");
+
+	    // Send data to server
+	    if (send(sock, message, strlen(message), 0) < 0) {
+	        printf("Failed to send data\n");
+	        close(sock);
+	        vTaskDelete(NULL);
+	        return;
+	    }
+
+	    printf("Data sent successfully\n");
+
+	    // Receive data from server
+	    bytes_received = recv(sock, buffer, sizeof(buffer) - 1, 0);
+	    if (bytes_received > 0) {
+	        buffer[bytes_received] = '\0';  // Null-terminate received data
+	        printf("Received from server: %s\n", buffer);
+	    } else {
+	        printf("Failed to receive data\n");
+	    }
+
+	    // Close socket and clean up
+	    close(sock);
+
+	    vTaskDelete(NULL);  // Delete task after completion
+}
 /* USER CODE END Application */
 

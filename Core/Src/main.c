@@ -109,12 +109,6 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  printf("hello world\n\r");
-  // Set this network interface as default
-   //netif_set_default(&gnetif);
-
-   // Bring up the network interface
-   //netif_set_up(&gnetif);
 
   /* USER CODE END 2 */
 
